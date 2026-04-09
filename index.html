@@ -1,0 +1,283 @@
+import { useEffect, useMemo, useState } from "react";
+
+export default function GasIdealVisualInteractivo() {
+
+  const R = 0.082057;
+
+  const limits = {
+    P: { min: 0.2, max: 5.0, step: 0.01, label: "P", unit: "atm" },
+    V: { min: 2, max: 40, step: 0.1, label: "V", unit: "L" },
+    n: { min: 0.2, max: 3.0, step: 0.01, label: "n", unit: "mol" },
+    T: { min: 120, max: 900, step: 1, label: "T", unit: "K" },
+  };
+
+  const [known, setKnown] = useState({
+    P: 2.35,
+    V: 21.0,
+    n: 1.0,
+    T: 600,
+  });
+
+  const [solveFor, setSolveFor] = useState("V");
+  const [particles, setParticles] = useState(() => initialParticles(8));
+
+  const values = useMemo(() => {
+    const next = { ...known };
+
+    if (solveFor === "P") next.P = (next.n * R * next.T) / next.V;
+    if (solveFor === "V") next.V = (next.n * R * next.T) / next.P;
+    if (solveFor === "n") next.n = (next.P * next.V) / (R * next.T);
+    if (solveFor === "T") next.T = (next.P * next.V) / (R * next.n);
+
+    return {
+      P: clamp(next.P, limits.P.min, limits.P.max),
+      V: clamp(next.V, limits.V.min, limits.V.max),
+      n: clamp(next.n, limits.n.min, limits.n.max),
+      T: clamp(next.T, limits.T.min, limits.T.max),
+    };
+  }, [known, solveFor]);
+
+  const displayEq = `P·V = n·R·T`;
+
+  useEffect(() => {
+    const count = Math.max(4, Math.min(20, Math.round(values.n * 6 + values.T / 250)));
+    setParticles((prev) => syncParticles(prev, count));
+  }, [values.n, values.T]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setParticles((prev) => moveParticles(prev, values));
+    }, 40);
+    return () => clearInterval(id);
+  }, [values]);
+
+  const pistonY = mapRange(values.V, limits.V.min, limits.V.max, 200, 92);
+  const glowOpacity = mapRange(values.T, limits.T.min, limits.T.max, 0.12, 0.35);
+  const speedFactor = mapRange(values.T, limits.T.min, limits.T.max, 0.35, 1.35);
+
+  const rows = ["P", "V", "n", "T"];
+
+  return (
+    <div className="min-h-screen bg-[#1f1f22] text-white p-6 md:p-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="rounded-[30px] overflow-hidden border border-white/10 bg-gradient-to-br from-[#2b2b2f] to-[#232326] shadow-2xl">
+          <div className="grid md:grid-cols-[1.05fr_1fr]">
+            <div className="p-8 md:p-10 border-b md:border-b-0 md:border-r border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))]">
+              <div className="mb-10 flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.25em] text-white/45 mb-2">Ley de los gases ideales</div>
+                  <div className="text-5xl md:text-6xl italic font-serif text-white/95">PV = nRT</div>
+                </div>
+                <div className="text-right text-sm text-white/45">
+                  <div>R = {R.toFixed(5)}</div>
+                  <div>L·atm·mol⁻¹·K⁻¹</div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {rows.map((key) => {
+                  const meta = limits[key];
+                  const isSolved = solveFor === key;
+                  return (
+                    <div key={key} className="grid grid-cols-[36px_64px_1fr_28px] items-center gap-4">
+                      <div className="text-4xl italic font-serif text-white/90">{meta.label}</div>
+                      <div className="text-2xl tabular-nums text-white/90 text-right">
+                        {formatValue(values[key], key)}
+                      </div>
+                      <div>
+                        <input
+                          type="range"
+                          min={meta.min}
+                          max={meta.max}
+                          step={meta.step}
+                          value={isSolved ? values[key] : known[key]}
+                          disabled={isSolved}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setKnown((prev) => ({ ...prev, [key]: v }));
+                          }}
+                          className={`w-full h-3 appearance-none rounded-full bg-white/10 accent-white ${isSolved ? "opacity-45 cursor-not-allowed" : "cursor-pointer"}`}
+                        />
+                        <div className="mt-1 flex justify-between text-[10px] uppercase tracking-wider text-white/30">
+                          <span>{meta.min}</span>
+                          <span>{meta.unit}</span>
+                          <span>{meta.max}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSolveFor(key)}
+                        className={`h-7 w-7 rounded-full border transition ${isSolved ? "border-white/90 bg-white/90 shadow-[0_0_0_3px_rgba(255,255,255,0.08)]" : "border-white/50 bg-transparent hover:border-white/80"}`}
+                        title={`Resolver ${key}`}
+                        aria-label={`Resolver ${key}`}
+                      >
+                        <div className={`mx-auto h-3.5 w-3.5 rounded-full ${isSolved ? "bg-[#9ca3af]" : "bg-transparent"}`} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-10 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-white/45 mb-2">Variable despejada</div>
+                  <div className="text-2xl font-semibold">{solveFor}</div>
+                  <div className="text-sm text-white/55 mt-1">Las otras tres se controlan con los deslizadores.</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-white/45 mb-2">Ecuación activa</div>
+                  <div className="text-lg font-mono text-white/90">{renderFormula(solveFor)}</div>
+                  <div className="text-sm text-white/55 mt-1">Se recalcula en tiempo real.</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative p-6 md:p-10 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.05),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]">
+              <div className="h-full min-h-[520px] rounded-[28px] border border-white/8 bg-black/10 backdrop-blur-sm flex items-center justify-center relative overflow-hidden">
+                <div
+                  className="absolute inset-x-10 bottom-8 h-10 rounded-full blur-2xl"
+                  style={{ background: `radial-gradient(circle, rgba(0,0,0,0.35), transparent 70%)` }}
+                />
+
+                <svg viewBox="0 0 420 420" className="w-full max-w-[420px] h-auto overflow-visible">
+                  <defs>
+                    <linearGradient id="glass" x1="0" x2="1">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.10)" />
+                      <stop offset="45%" stopColor="rgba(255,255,255,0.03)" />
+                      <stop offset="55%" stopColor="rgba(255,255,255,0.16)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0.04)" />
+                    </linearGradient>
+                    <linearGradient id="piston" x1="0" x2="1">
+                      <stop offset="0%" stopColor="rgba(180,180,180,0.40)" />
+                      <stop offset="50%" stopColor="rgba(220,220,220,0.22)" />
+                      <stop offset="100%" stopColor="rgba(180,180,180,0.40)" />
+                    </linearGradient>
+                    <radialGradient id="particleGlow">
+                      <stop offset="0%" stopColor={`rgba(96,165,250,${0.75 * glowOpacity + 0.25})`} />
+                      <stop offset="100%" stopColor="rgba(96,165,250,0.12)" />
+                    </radialGradient>
+                  </defs>
+
+                  <ellipse cx="210" cy="320" rx="112" ry="22" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="2" />
+                  <line x1="98" y1="74" x2="98" y2="320" stroke="url(#glass)" strokeWidth="2.2" />
+                  <line x1="322" y1="74" x2="322" y2="320" stroke="url(#glass)" strokeWidth="2.2" />
+                  <ellipse cx="210" cy="74" rx="112" ry="22" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="2" />
+
+                  <ellipse cx="210" cy={pistonY} rx="110" ry="22" fill="url(#piston)" stroke="rgba(255,255,255,0.14)" strokeWidth="1.6" />
+                  <rect x="100" y={pistonY} width="220" height={320 - pistonY} fill={`rgba(148,163,184,${0.025 + glowOpacity * 0.12})`} />
+
+                  {particles.map((p) => (
+                    <g key={p.id}>
+                      <circle cx={p.x} cy={p.y} r={p.r + 4} fill="url(#particleGlow)" opacity="0.55" />
+                      <circle cx={p.x} cy={p.y} r={p.r} fill="rgba(96,165,250,0.95)" />
+                    </g>
+                  ))}
+                </svg>
+
+                <div className="absolute left-6 bottom-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/70 backdrop-blur-sm">
+                  <div className="font-semibold text-white/90 mb-1">Estado físico</div>
+                  <div>Presión: <span className="tabular-nums">{values.P.toFixed(2)} atm</span></div>
+                  <div>Volumen: <span className="tabular-nums">{values.V.toFixed(1)} L</span></div>
+                  <div>Moles: <span className="tabular-nums">{values.n.toFixed(2)} mol</span></div>
+                  <div>Temperatura: <span className="tabular-nums">{values.T.toFixed(0)} K</span></div>
+                </div>
+
+                <div className="absolute right-6 top-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs uppercase tracking-[0.2em] text-white/55 backdrop-blur-sm">
+                  Animación funcional
+                  <div className="mt-2 text-[11px] normal-case tracking-normal text-white/60">
+                    Más temperatura → más agitación.<br />
+                    Más volumen → pistón más alto.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 text-sm text-white/45">
+          Réplica interactiva inspirada en tu referencia. Puedes usarla como base para GitHub Pages o seguir refinándola visualmente.
+        </div>
+      </div>
+    </div>
+  );
+
+  function initialParticles(count) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1,
+      x: 130 + Math.random() * 160,
+      y: 250 + Math.random() * 50,
+      vx: (Math.random() - 0.5) * 1.6,
+      vy: (Math.random() - 0.5) * 1.6,
+      r: 6 + Math.random() * 2,
+    }));
+  }
+
+  function syncParticles(prev, count) {
+    if (prev.length === count) return prev;
+    if (prev.length > count) return prev.slice(0, count);
+    const extra = Array.from({ length: count - prev.length }, (_, i) => ({
+      id: prev.length + i + 1,
+      x: 130 + Math.random() * 160,
+      y: 240 + Math.random() * 55,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
+      r: 6 + Math.random() * 2,
+    }));
+    return [...prev, ...extra];
+  }
+
+  function moveParticles(prev, v) {
+    const left = 108;
+    const right = 312;
+    const top = mapRange(v.V, limits.V.min, limits.V.max, 200, 92) + 18;
+    const bottom = 314;
+    const tempSpeed = mapRange(v.T, limits.T.min, limits.T.max, 0.45, 1.9);
+
+    return prev.map((p) => {
+      let x = p.x + p.vx * tempSpeed;
+      let y = p.y + p.vy * tempSpeed;
+      let vx = p.vx;
+      let vy = p.vy;
+
+      if (x < left + p.r) {
+        x = left + p.r;
+        vx *= -1;
+      }
+      if (x > right - p.r) {
+        x = right - p.r;
+        vx *= -1;
+      }
+      if (y < top + p.r) {
+        y = top + p.r;
+        vy *= -1;
+      }
+      if (y > bottom - p.r) {
+        y = bottom - p.r;
+        vy *= -1;
+      }
+
+      return { ...p, x, y, vx, vy };
+    });
+  }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function mapRange(v, inMin, inMax, outMin, outMax) {
+    const t = (v - inMin) / (inMax - inMin);
+    return outMin + (outMax - outMin) * t;
+  }
+
+  function formatValue(value, key) {
+    if (key === "T") return value.toFixed(1);
+    if (key === "V") return value.toFixed(1);
+    return value.toFixed(2);
+  }
+
+  function renderFormula(key) {
+    if (key === "P") return "P = nRT / V";
+    if (key === "V") return "V = nRT / P";
+    if (key === "n") return "n = PV / RT";
+    return "T = PV / nR";
+  }
+}
