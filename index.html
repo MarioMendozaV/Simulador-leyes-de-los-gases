@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ley de los gases ideales - PV = nRT</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #1f1f22;
+      color: white;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .card {
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, #2b2b2f, #232326);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+    }
+    .left {
+      padding: 40px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    }
+    .right {
+      position: relative;
+      padding: 24px 40px 40px;
+      background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.05), transparent 36%), linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 8px;
+    }
+    .title {
+      font-size: clamp(42px, 7vw, 64px);
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: rgba(255,255,255,0.95);
+      line-height: 1;
+      margin: 0;
+    }
+    .rbox {
+      text-align: right;
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+      min-width: 120px;
+    }
+    .rows { display: flex; flex-direction: column; gap: 24px; }
+    .row {
+      display: grid;
+      grid-template-columns: 36px 72px 1fr 28px;
+      align-items: center;
+      gap: 16px;
+    }
+    .symbol {
+      font-size: 44px;
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: rgba(255,255,255,0.9);
+    }
+    .value {
+      font-size: 30px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,0.9);
+    }
+    .slider-wrap input[type=range] {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      outline: none;
+    }
+    .slider-wrap input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      border: 2px solid rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    .slider-wrap input[type=range]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      border: 2px solid rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    .slider-wrap input[disabled] { opacity: 0.45; cursor: not-allowed; }
+    .minmax {
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.30);
+    }
+    .radio-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.5);
+      background: transparent;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .radio-btn:hover { border-color: rgba(255,255,255,0.8); }
+    .radio-btn.active {
+      border-color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+    }
+    .radio-btn .inner {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: transparent;
+    }
+    .radio-btn.active .inner { background: #9ca3af; }
+    .bottom-cards {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .mini-card {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.15);
+    }
+    .mini-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 8px;
+    }
+    .mini-value { font-size: 30px; font-weight: 600; }
+    .mini-desc { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+    .viz {
+      min-height: 520px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.10);
+      backdrop-filter: blur(6px);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .shadow {
+      position: absolute;
+      inset-inline: 40px;
+      bottom: 32px;
+      height: 40px;
+      border-radius: 999px;
+      filter: blur(24px);
+      background: radial-gradient(circle, rgba(0,0,0,0.35), transparent 70%);
+    }
+    svg { width: 100%; max-width: 420px; height: auto; overflow: visible; }
+    .status, .note {
+      position: absolute;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.20);
+      backdrop-filter: blur(6px);
+      padding: 12px 16px;
+    }
+    .status {
+      left: 24px; bottom: 24px; font-size: 14px; color: rgba(255,255,255,0.7);
+    }
+    .status strong { color: rgba(255,255,255,0.9); }
+    .status .num { font-variant-numeric: tabular-nums; }
+    .note {
+      right: 24px; top: 24px; font-size: 11px; color: rgba(255,255,255,0.55);
+      text-transform: uppercase; letter-spacing: 0.2em;
+    }
+    .note .small {
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: normal;
+      text-transform: none;
+      color: rgba(255,255,255,0.60);
+      line-height: 1.45;
+    }
+    .footer {
+      margin-top: 16px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .left { border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    }
+    @media (max-width: 680px) {
+      body { padding: 12px; }
+      .left, .right { padding: 20px; }
+      .row { grid-template-columns: 28px 60px 1fr 28px; gap: 10px; }
+      .symbol { font-size: 34px; }
+      .value { font-size: 24px; }
+      .bottom-cards { grid-template-columns: 1fr; }
+      .status, .note { position: static; margin-top: 12px; }
+      .viz { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="grid">
+        <section class="left">
+          <div class="header">
+            <div>
+              <div class="eyebrow">Ley de los gases ideales</div>
+              <h1 class="title">PV = nRT</h1>
+            </div>
+            <div class="rbox">
+              <div id="rValue"></div>
+              <div>L·atm·mol⁻¹·K⁻¹</div>
+            </div>
+          </div>
+
+          <div class="rows" id="rows"></div>
+
+          <div class="bottom-cards">
+            <div class="mini-card">
+              <div class="mini-label">Variable despejada</div>
+              <div class="mini-value" id="solveForValue">V</div>
+              <div class="mini-desc">Las otras tres se controlan con los deslizadores.</div>
+            </div>
+            <div class="mini-card">
+              <div class="mini-label">Ecuación activa</div>
+              <div class="mini-value" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px;" id="activeFormula"></div>
+              <div class="mini-desc">Se recalcula en tiempo real.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="right">
+          <div class="viz">
+            <div class="shadow"></div>
+            <svg viewBox="0 0 420 420">
+              <defs>
+                <linearGradient id="glass" x1="0" x2="1">
+                  <stop offset="0%" stop-color="rgba(255,255,255,0.10)"></stop>
+                  <stop offset="45%" stop-color="rgba(255,255,255,0.03)"></stop>
+                  <stop offset="55%" stop-color="rgba(255,255,255,0.16)"></stop>
+                  <stop offset="100%" stop-color="rgba(255,255,255,0.04)"></stop>
+                </linearGradient>
+                <linearGradient id="piston" x1="0" x2="1">
+                  <stop offset="0%" stop-color="rgba(180,180,180,0.40)"></stop>
+                  <stop offset="50%" stop-color="rgba(220,220,220,0.22)"></stop>
+                  <stop offset="100%" stop-color="rgba(180,180,180,0.40)"></stop>
+                </linearGradient>
+                <radialGradient id="particleGlow">
+                  <stop id="particleGlowStop" offset="0%" stop-color="rgba(96,165,250,0.45)"></stop>
+                  <stop offset="100%" stop-color="rgba(96,165,250,0.12)"></stop>
+                </radialGradient>
+              </defs>
+
+              <ellipse cx="210" cy="320" rx="112" ry="22" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="2"></ellipse>
+              <line x1="98" y1="74" x2="98" y2="320" stroke="url(#glass)" stroke-width="2.2"></line>
+              <line x1="322" y1="74" x2="322" y2="320" stroke="url(#glass)" stroke-width="2.2"></line>
+              <ellipse cx="210" cy="74" rx="112" ry="22" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="2"></ellipse>
+
+              <ellipse id="pistonTop" cx="210" cy="150" rx="110" ry="22" fill="url(#piston)" stroke="rgba(255,255,255,0.14)" stroke-width="1.6"></ellipse>
+              <rect id="gasFill" x="100" y="150" width="220" height="170" fill="rgba(148,163,184,0.04)"></rect>
+              <g id="particleLayer"></g>
+            </svg>
+
+            <div class="status">
+              <div><strong>Estado físico</strong></div>
+              <div>Presión: <span class="num" id="statusP"></span> atm</div>
+              <div>Volumen: <span class="num" id="statusV"></span> L</div>
+              <div>Moles: <span class="num" id="statusN"></span> mol</div>
+              <div>Temperatura: <span class="num" id="statusT"></span> K</div>
+            </div>
+
+            <div class="note">
+              Animación funcional
+              <div class="small">
+                Más temperatura → más agitación.<br>
+                Más volumen → pistón más alto.
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer">Versión en HTML, CSS y JavaScript puro, lista para GitHub Pages sin compilación.</div>
+  </div>
+
+  <script>
+    const R = 0.082057;
+    const limits = {
+      P: { min: 0.2, max: 5.0, step: 0.01, label: 'P', unit: 'atm' },
+      V: { min: 2, max: 40, step: 0.1, label: 'V', unit: 'L' },
+      n: { min: 0.2, max: 3.0, step: 0.01, label: 'n', unit: 'mol' },
+      T: { min: 120, max: 900, step: 1, label: 'T', unit: 'K' }
+    };
+
+    let known = { P: 2.35, V: 21.0, n: 1.0, T: 600 };
+    let solveFor = 'V';
+    let particles = initialParticles(8);
+
+    const rowsContainer = document.getElementById('rows');
+    const particleLayer = document.getElementById('particleLayer');
+    const pistonTop = document.getElementById('pistonTop');
+    const gasFill = document.getElementById('gasFill');
+    const particleGlowStop = document.getElementById('particleGlowStop');
+
+    document.getElementById('rValue').textContent = `R = ${R.toFixed(5)}`;
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function mapRange(v, inMin, inMax, outMin, outMax) {
+      const t = (v - inMin) / (inMax - inMin);
+      return outMin + (outMax - outMin) * t;
+    }
+    function formatValue(value, key) {
+      if (key === 'T' || key === 'V') return value.toFixed(1);
+      return value.toFixed(2);
+    }
+    function renderFormula(key) {
+      if (key === 'P') return 'P = nRT / V';
+      if (key === 'V') return 'V = nRT / P';
+      if (key === 'n') return 'n = PV / RT';
+      return 'T = PV / nR';
+    }
+
+    function computeValues() {
+      const next = { ...known };
+      if (solveFor === 'P') next.P = (next.n * R * next.T) / next.V;
+      if (solveFor === 'V') next.V = (next.n * R * next.T) / next.P;
+      if (solveFor === 'n') next.n = (next.P * next.V) / (R * next.T);
+      if (solveFor === 'T') next.T = (next.P * next.V) / (R * next.n);
+      return {
+        P: clamp(next.P, limits.P.min, limits.P.max),
+        V: clamp(next.V, limits.V.min, limits.V.max),
+        n: clamp(next.n, limits.n.min, limits.n.max),
+        T: clamp(next.T, limits.T.min, limits.T.max)
+      };
+    }
+
+    function buildRows() {
+      rowsContainer.innerHTML = '';
+      ['P', 'V', 'n', 'T'].forEach((key) => {
+        const meta = limits[key];
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="symbol">${meta.label}</div>
+          <div class="value" id="value-${key}"></div>
+          <div class="slider-wrap">
+            <input id="slider-${key}" type="range" min="${meta.min}" max="${meta.max}" step="${meta.step}">
+            <div class="minmax"><span>${meta.min}</span><span>${meta.unit}</span><span>${meta.max}</span></div>
+          </div>
+          <button class="radio-btn" id="solve-${key}" title="Resolver ${key}" aria-label="Resolver ${key}"><div class="inner"></div></button>
+        `;
+        rowsContainer.appendChild(row);
+
+        const slider = row.querySelector(`#slider-${key}`);
+        slider.addEventListener('input', (e) => {
+          known[key] = Number(e.target.value);
+          updateUI();
+        });
+        row.querySelector(`#solve-${key}`).addEventListener('click', () => {
+          solveFor = key;
+          updateUI();
+        });
+      });
+    }
+
+    function initialParticles(count) {
+      return Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        x: 130 + Math.random() * 160,
+        y: 250 + Math.random() * 50,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: (Math.random() - 0.5) * 1.6,
+        r: 6 + Math.random() * 2
+      }));
+    }
+
+    function syncParticles(prev, count) {
+      if (prev.length === count) return prev;
+      if (prev.length > count) return prev.slice(0, count);
+      const extra = Array.from({ length: count - prev.length }, (_, i) => ({
+        id: prev.length + i + 1,
+        x: 130 + Math.random() * 160,
+        y: 240 + Math.random() * 55,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        r: 6 + Math.random() * 2
+      }));
+      return [...prev, ...extra];
+    }
+
+    function moveParticles(prev, v) {
+      const left = 108;
+      const right = 312;
+      const top = mapRange(v.V, limits.V.min, limits.V.max, 200, 92) + 18;
+      const bottom = 314;
+      const tempSpeed = mapRange(v.T, limits.T.min, limits.T.max, 0.45, 1.9);
+
+      return prev.map((p) => {
+        let x = p.x + p.vx * tempSpeed;
+        let y = p.y + p.vy * tempSpeed;
+        let vx = p.vx;
+        let vy = p.vy;
+
+        if (x < left + p.r) { x = left + p.r; vx *= -1; }
+        if (x > right - p.r) { x = right - p.r; vx *= -1; }
+        if (y < top + p.r) { y = top + p.r; vy *= -1; }
+        if (y > bottom - p.r) { y = bottom - p.r; vy *= -1; }
+
+        return { ...p, x, y, vx, vy };
+      });
+    }
+
+    function updateViz(values) {
+      const pistonY = mapRange(values.V, limits.V.min, limits.V.max, 200, 92);
+      const glowOpacity = mapRange(values.T, limits.T.min, limits.T.max, 0.12, 0.35);
+      const count = Math.max(4, Math.min(20, Math.round(values.n * 6 + values.T / 250)));
+      particles = syncParticles(particles, count);
+
+      pistonTop.setAttribute('cy', pistonY.toFixed(2));
+      gasFill.setAttribute('y', pistonY.toFixed(2));
+      gasFill.setAttribute('height', (320 - pistonY).toFixed(2));
+      gasFill.setAttribute('fill', `rgba(148,163,184,${0.025 + glowOpacity * 0.12})`);
+      particleGlowStop.setAttribute('stop-color', `rgba(96,165,250,${0.75 * glowOpacity + 0.25})`);
+
+      particleLayer.innerHTML = particles.map(p => `
+        <circle cx="${p.x}" cy="${p.y}" r="${p.r + 4}" fill="url(#particleGlow)" opacity="0.55"></circle>
+        <circle cx="${p.x}" cy="${p.y}" r="${p.r}" fill="rgba(96,165,250,0.95)"></circle>
+      `).join('');
+
+      document.getElementById('statusP').textContent = values.P.toFixed(2);
+      document.getElementById('statusV').textContent = values.V.toFixed(1);
+      document.getElementById('statusN').textContent = values.n.toFixed(2);
+      document.getElementById('statusT').textContent = values.T.toFixed(0);
+    }
+
+    function updateUI() {
+      const values = computeValues();
+
+      ['P', 'V', 'n', 'T'].forEach((key) => {
+        const isSolved = key === solveFor;
+        document.getElementById(`value-${key}`).textContent = formatValue(values[key], key);
+        const slider = document.getElementById(`slider-${key}`);
+        slider.value = isSolved ? values[key] : known[key];
+        slider.disabled = isSolved;
+        const btn = document.getElementById(`solve-${key}`);
+        btn.classList.toggle('active', isSolved);
+      });
+
+      document.getElementById('solveForValue').textContent = solveFor;
+      document.getElementById('activeFormula').textContent = renderFormula(solveFor);
+      updateViz(values);
+    }
+
+    buildRows();
+    updateUI();
+
+    setInterval(() => {
+      const values = computeValues();
+      particles = moveParticles(particles, values);
+      updateViz(values);
+    }, 40);
+  </script>
+</body>
+</html>
